@@ -2,8 +2,22 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Pencil, Plus } from 'lucide-react';
 import { formatRupiah } from '../utils/currency';
-import { formatRelativeDate } from '../utils/date';
 import { useTransactions } from '../context/TransactionContext';
+
+/**
+ * Format a Supabase ISO timestamp (created_at) into a localised Indonesian date.
+ * Falls back gracefully if the value is null / invalid.
+ */
+const formatDepositDate = (isoTimestamp) => {
+  if (!isoTimestamp) return '—';
+  const date = new Date(isoTimestamp);
+  if (isNaN(date.getTime())) return '—';
+  return date.toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+};
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -70,7 +84,9 @@ const GoalCard = ({ goal }) => {
           Target reached {percentage}%
         </p>
         <p className="text-emerald-50 text-xs font-medium">
-          Estimated to reach in {goal.estimatedDays} days
+          {goal.estimatedDays
+            ? `Estimated to reach in ${goal.estimatedDays} days`
+            : 'Keep saving to reach your goal!'}
         </p>
       </div>
     </div>
@@ -79,12 +95,15 @@ const GoalCard = ({ goal }) => {
 
 const DepositInput = ({ onDeposit }) => {
   const [amount, setAmount] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleDeposit = () => {
+  const handleDeposit = async () => {
     const val = parseInt(amount, 10);
     if (!isNaN(val) && val > 0) {
-      onDeposit(val);
+      setLoading(true);
+      await onDeposit(val);
       setAmount('');
+      setLoading(false);
     }
   };
 
@@ -101,18 +120,20 @@ const DepositInput = ({ onDeposit }) => {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0"
-            className="w-full bg-white border border-gray-200 rounded-xl py-2.5 pl-10 pr-3 
-                       text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#189C63]/50"
+            disabled={loading}
+            className="w-full bg-white border border-gray-200 rounded-xl py-2.5 pl-10 pr-3
+                       text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2
+                       focus:ring-[#189C63]/50 disabled:opacity-60"
           />
         </div>
         <button
           onClick={handleDeposit}
-          disabled={!amount || parseInt(amount, 10) <= 0}
+          disabled={loading || !amount || parseInt(amount, 10) <= 0}
           className="bg-[#189C63] text-white px-5 py-2.5 rounded-xl font-bold text-sm
                      disabled:opacity-50 disabled:cursor-not-allowed transition-opacity
-                     active:scale-95 hover:bg-emerald-700"
+                     active:scale-95 hover:bg-emerald-700 min-w-[88px]"
         >
-          Deposit
+          {loading ? 'Saving…' : 'Deposit'}
         </button>
       </div>
     </div>
@@ -146,7 +167,7 @@ const DepositHistoryList = ({ history }) => {
                 </span>
               </div>
               <span className="text-sm text-gray-400 font-medium">
-                {formatRelativeDate(item.date)}
+                {formatDepositDate(item.created_at)}
               </span>
             </div>
           ))

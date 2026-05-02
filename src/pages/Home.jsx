@@ -127,9 +127,8 @@ const TransactionItem = ({ transaction }) => {
       {/* Amount + date */}
       <div className="text-right shrink-0">
         <p
-          className={`text-sm font-bold ${
-            isIncome ? 'text-emerald-600' : 'text-red-500'
-          }`}
+          className={`text-sm font-bold ${isIncome ? 'text-emerald-600' : 'text-red-500'
+            }`}
         >
           {isIncome ? '+' : '-'}{formatRupiah(transaction.amount)}
         </p>
