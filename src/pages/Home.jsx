@@ -3,7 +3,6 @@ import { ArrowUpRight, ArrowDownRight, ChevronRight } from 'lucide-react';
 import { useTransactions } from '../context/TransactionContext';
 import { getCategoryByLabel } from '../constants/categories';
 import { formatRupiah } from '../utils/currency';
-import { formatRelativeDate } from '../utils/date';
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -132,7 +131,13 @@ const TransactionItem = ({ transaction }) => {
         >
           {isIncome ? '+' : '-'}{formatRupiah(transaction.amount)}
         </p>
-        <p className="text-xs text-gray-400">{formatRelativeDate(transaction.date)}</p>
+        <p className="text-xs text-gray-400">
+          {new Date(transaction.created_at).toLocaleDateString('id-ID', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+          })}
+        </p>
       </div>
     </div>
   );
