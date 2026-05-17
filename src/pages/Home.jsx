@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, ArrowDownRight, ChevronRight } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, ChevronRight, Target } from 'lucide-react';
 import { useTransactions } from '../context/TransactionContext';
+import { useAuth } from '../context/AuthContext';
 import { getCategoryByLabel } from '../constants/categories';
 import { formatRupiah } from '../utils/currency';
 
@@ -9,21 +10,24 @@ import { formatRupiah } from '../utils/currency';
 // ---------------------------------------------------------------------------
 
 /** Personalised greeting + avatar */
-const Header = () => (
-  <div className="flex items-center justify-between px-5 pt-6 pb-2">
-    <div>
-      <p className="text-sm text-gray-500 font-medium">Hello, John Smith!</p>
-      <h1 className="text-2xl font-extrabold text-gray-800 leading-tight">Home</h1>
+const Header = ({ displayName }) => {
+  const letter = (displayName?.[0] ?? '?').toUpperCase();
+  return (
+    <div className="flex items-center justify-between px-5 pt-6 pb-2">
+      <div>
+        <p className="text-sm text-slate-400 font-medium">Hello, {displayName}!</p>
+        <h1 className="text-2xl font-extrabold text-white leading-tight">Home</h1>
+      </div>
+      <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+        <span className="text-emerald-400 text-lg font-bold select-none">{letter}</span>
+      </div>
     </div>
-    <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-      <span className="text-emerald-700 text-lg font-bold select-none">J</span>
-    </div>
-  </div>
-);
+  );
+};
 
 /** Green balance card */
 const BalanceCard = ({ balance }) => (
-  <div className="mx-5 mt-3 rounded-2xl bg-[#189C63] p-5 shadow-lg relative overflow-hidden">
+  <div className="mx-5 mt-3 rounded-2xl bg-emerald-600 p-5 shadow-lg shadow-emerald-900/40 relative overflow-hidden">
     {/* Decorative circles */}
     <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-white/10" />
     <div className="absolute -bottom-8 -right-2 w-20 h-20 rounded-full bg-white/10" />
@@ -49,54 +53,83 @@ const BalanceCard = ({ balance }) => (
 const SummaryRow = ({ totalIncome, totalExpense }) => (
   <div className="flex gap-3 mx-5 mt-4">
     {/* Income card */}
-    <div className="flex-1 rounded-2xl bg-blue-50 border border-blue-100 p-4">
+    <div className="flex-1 rounded-2xl bg-slate-800/60 border border-slate-700/60 p-4">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs text-gray-500 font-medium">Income</span>
-        <ArrowUpRight className="w-4 h-4 text-emerald-500" strokeWidth={2.5} />
+        <span className="text-xs text-slate-400 font-medium">Income</span>
+        <ArrowUpRight className="w-4 h-4 text-emerald-400" strokeWidth={2.5} />
       </div>
-      <p className="text-sm font-bold text-gray-800">{formatRupiah(totalIncome)}</p>
-      <p className="text-[11px] text-emerald-500 mt-0.5 font-medium">+12.5% from last month</p>
+      <p className="text-sm font-bold text-white">{formatRupiah(totalIncome)}</p>
+      <p className="text-[11px] text-emerald-400 mt-0.5 font-medium">Total income</p>
     </div>
 
     {/* Expense card */}
-    <div className="flex-1 rounded-2xl bg-red-50 border border-red-100 p-4">
+    <div className="flex-1 rounded-2xl bg-slate-800/60 border border-slate-700/60 p-4">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs text-gray-500 font-medium">Expenses</span>
+        <span className="text-xs text-slate-400 font-medium">Expenses</span>
         <ArrowDownRight className="w-4 h-4 text-red-400" strokeWidth={2.5} />
       </div>
-      <p className="text-sm font-bold text-red-500">{formatRupiah(totalExpense)}</p>
-      <p className="text-[11px] text-red-400 mt-0.5 font-medium">-8.3% from last month</p>
+      <p className="text-sm font-bold text-red-400">{formatRupiah(totalExpense)}</p>
+      <p className="text-[11px] text-red-400/80 mt-0.5 font-medium">Total expenses</p>
     </div>
   </div>
 );
 
-/** Savings goal progress card */
-const SavingsGoalCard = () => {
-  const current = 1_000_000;
-  const target = 2_000_000;
-  const percentage = Math.round((current / target) * 100);
+/** Savings goal progress card – driven by live context data */
+const SavingsGoalCard = ({ goalState }) => {
+  if (!goalState) {
+    return (
+      <Link
+        to="/goals"
+        className="mx-5 mt-4 rounded-2xl bg-slate-800/60 border border-slate-700/60 p-4 flex items-center gap-3 hover:bg-slate-800 transition-colors"
+      >
+        <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+          <Target className="w-5 h-5 text-emerald-400" strokeWidth={2} />
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-slate-200">Savings Goal</p>
+          <p className="text-xs text-slate-500 mt-0.5">Tap to set up your savings goal →</p>
+        </div>
+      </Link>
+    );
+  }
+
+  const safeTarget = goalState.target || 1;
+  const percentage = Math.min(100, Math.round((goalState.current / safeTarget) * 100));
+
+  const motivationalText = () => {
+    if (percentage >= 100) return '🎉 Goal reached! Congratulations!';
+    if (percentage >= 75) return "Almost there! You're doing great 💪";
+    if (percentage >= 50) return "Awesome! You're halfway there 🎉";
+    if (percentage >= 25) return 'Good progress! Keep it up 🚀';
+    return 'Every deposit counts. Keep going! 💰';
+  };
 
   return (
-    <div className="mx-5 mt-4 rounded-2xl bg-white border border-gray-100 shadow-sm p-4">
-      <p className="text-sm font-semibold text-gray-700 mb-2">Savings Goal</p>
-      <p className="text-sm text-gray-500 mb-3">
-        <span className="text-gray-800 font-bold">{formatRupiah(current)}</span>
+    <Link
+      to="/goals"
+      className="mx-5 mt-4 rounded-2xl bg-slate-800/60 border border-slate-700/60 p-4 block hover:bg-slate-800 transition-colors"
+    >
+      <p className="text-sm font-semibold text-slate-200 mb-2">
+        {goalState.title ?? 'Savings Goal'}
+      </p>
+      <p className="text-sm text-slate-400 mb-3">
+        <span className="text-white font-bold">{formatRupiah(goalState.current)}</span>
         {' / '}
-        {formatRupiah(target)}
+        {formatRupiah(goalState.target)}
       </p>
 
-      <div className="relative h-2 rounded-full bg-gray-100 overflow-hidden">
+      <div className="relative h-2 rounded-full bg-slate-700 overflow-hidden">
         <div
-          className="absolute inset-y-0 left-0 rounded-full bg-[#189C63] transition-all duration-700"
+          className="absolute inset-y-0 left-0 rounded-full bg-emerald-500 transition-all duration-700"
           style={{ width: `${percentage}%` }}
         />
       </div>
 
       <div className="flex items-center justify-between mt-2">
-        <p className="text-xs text-gray-400">Awesome! You're halfway there 🎉</p>
-        <span className="text-xs font-bold text-[#189C63]">{percentage}%</span>
+        <p className="text-xs text-slate-500">{motivationalText()}</p>
+        <span className="text-xs font-bold text-emerald-400">{percentage}%</span>
       </div>
-    </div>
+    </Link>
   );
 };
 
@@ -117,21 +150,18 @@ const TransactionItem = ({ transaction }) => {
 
       {/* Title + category */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-800 truncate">
+        <p className="text-sm font-semibold text-slate-100 truncate">
           {transaction.note || transaction.category}
         </p>
-        <p className="text-xs text-gray-400 truncate">{transaction.category}</p>
+        <p className="text-xs text-slate-500 truncate">{transaction.category}</p>
       </div>
 
       {/* Amount + date */}
       <div className="text-right shrink-0">
-        <p
-          className={`text-sm font-bold ${isIncome ? 'text-emerald-600' : 'text-red-500'
-            }`}
-        >
+        <p className={`text-sm font-bold ${isIncome ? 'text-emerald-400' : 'text-red-400'}`}>
           {isIncome ? '+' : '-'}{formatRupiah(transaction.amount)}
         </p>
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-slate-500">
           {new Date(transaction.created_at).toLocaleDateString('id-ID', {
             day: 'numeric',
             month: 'short',
@@ -143,14 +173,14 @@ const TransactionItem = ({ transaction }) => {
   );
 };
 
-/** Empty state for the transactions list */
+/** Empty state */
 const EmptyTransactions = () => (
   <div className="flex flex-col items-center justify-center py-10 text-center">
-    <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+    <div className="w-14 h-14 rounded-full bg-slate-800 flex items-center justify-center mb-3">
       <span className="text-2xl">💸</span>
     </div>
-    <p className="text-sm font-semibold text-gray-500">No transactions yet</p>
-    <p className="text-xs text-gray-400 mt-1">Tap the + button to add your first one</p>
+    <p className="text-sm font-semibold text-slate-400">No transactions yet</p>
+    <p className="text-xs text-slate-600 mt-1">Tap the + button to add your first one</p>
   </div>
 );
 
@@ -158,17 +188,17 @@ const EmptyTransactions = () => (
 const RecentTransactions = ({ transactions }) => (
   <div className="mt-4 mb-6">
     <div className="flex items-center justify-between px-5 mb-2">
-      <h2 className="text-sm font-bold text-gray-800">Recent Transactions</h2>
+      <h2 className="text-sm font-bold text-slate-200">Recent Transactions</h2>
       <Link
         to="/transactions"
         id="home-see-all-transactions"
-        className="text-xs text-[#189C63] font-semibold flex items-center gap-0.5 hover:underline"
+        className="text-xs text-emerald-400 font-semibold flex items-center gap-0.5 hover:underline"
       >
         See All <ChevronRight className="w-3.5 h-3.5" />
       </Link>
     </div>
 
-    <div className="bg-white rounded-2xl mx-5 shadow-sm border border-gray-100 divide-y divide-gray-50">
+    <div className="bg-slate-800/60 rounded-2xl mx-5 border border-slate-700/60 divide-y divide-slate-700/40">
       {transactions.length === 0 ? (
         <EmptyTransactions />
       ) : (
@@ -184,27 +214,23 @@ const RecentTransactions = ({ transactions }) => (
 // Main Home page
 // ---------------------------------------------------------------------------
 
-/**
- * Home
- *
- * Consumes all financial data from TransactionContext:
- *   - currentBalance  → shown in the green balance card
- *   - totalIncome     → Income summary card
- *   - totalExpense    → Expense summary card
- *   - transactions    → Recent transactions list (pre-sorted newest-first by context)
- *
- * No local state or localStorage calls — all data ownership lives in the context.
- */
 const Home = () => {
-  const { currentBalance, totalIncome, totalExpense, transactions } =
+  const { currentBalance, totalIncome, totalExpense, transactions, goalState } =
     useTransactions();
+  const { user } = useAuth();
+
+  const displayName =
+    user?.user_metadata?.full_name ??
+    user?.user_metadata?.name ??
+    user?.email?.split('@')[0] ??
+    'there';
 
   return (
-    <div className="flex flex-col pb-24">
-      <Header />
+    <div className="flex flex-col pb-24 bg-slate-900 min-h-full">
+      <Header displayName={displayName} />
       <BalanceCard balance={currentBalance} />
       <SummaryRow totalIncome={totalIncome} totalExpense={totalExpense} />
-      <SavingsGoalCard />
+      <SavingsGoalCard goalState={goalState} />
       <RecentTransactions transactions={transactions} />
     </div>
   );

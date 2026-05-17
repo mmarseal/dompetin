@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../supabase.js';
+import { useAuth } from './AuthContext.jsx';
 
 const TransactionContext = createContext(null);
 
@@ -12,49 +13,64 @@ export const useTransactions = () => {
 };
 
 export const TransactionProvider = ({ children }) => {
+  const { user } = useAuth();
   const [transactions, setTransactions] = useState([]);
-  const [goalState, setGoalState] = useState({
-    target: 5000000,
-    current: 0,
-    history: [],
-  });
+  // null means "not loaded / no goal row exists yet"
+  const [goalState, setGoalState] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Clear state immediately when there is no logged-in user
+    if (!user) {
+      setTransactions([]);
+      setGoalState(null);
+      setLoading(false);
+      return;
+    }
+
     const fetchAll = async () => {
       setLoading(true);
       try {
+        // Fetch only the current user's transactions
         const { data: txData, error: txError } = await supabase
           .from('transactions')
           .select('*')
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
         if (txError) throw txError;
         setTransactions(txData ?? []);
 
+        // Fetch the current user's goal row
         const { data: goalData, error: goalError } = await supabase
           .from('goals')
           .select('*')
-          .eq('id', 1)
-          .single();
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-        if (goalError && goalError.code !== 'PGRST116') throw goalError;
+        if (goalError) throw goalError;
 
+        // Fetch only the current user's goal deposits
         const { data: depositsData, error: depositsError } = await supabase
           .from('goal_deposits')
           .select('*')
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
         if (depositsError) throw depositsError;
 
         if (goalData) {
           setGoalState({
+            id: goalData.id,
             title: goalData.title ?? 'Savings Goal',
-            target: goalData.target ?? 5000000,
+            target: goalData.target ?? 0,
             current: goalData.current ?? 0,
             estimatedDays: goalData.estimated_days ?? 0,
             history: depositsData ?? [],
           });
+        } else {
+          // No goal row yet — keep null but still store any stray deposits
+          setGoalState(null);
         }
       } catch (err) {
         console.error('[TransactionProvider] Failed to fetch data:', err.message);
@@ -64,7 +80,7 @@ export const TransactionProvider = ({ children }) => {
     };
 
     fetchAll();
-  }, []);
+  }, [user]);
 
   const totalIncome = useMemo(
     () => transactions.filter((t) => t.type === 'income').reduce((sum, t) => sum + (t.amount ?? 0), 0),
@@ -79,11 +95,13 @@ export const TransactionProvider = ({ children }) => {
   const currentBalance = useMemo(() => totalIncome - totalExpense, [totalIncome, totalExpense]);
 
   const addTransaction = useCallback(async (transaction) => {
+    if (!user) return null;
     try {
       const { data, error } = await supabase
         .from('transactions')
         .insert([
           {
+            user_id: user.id,
             title: transaction.title ?? transaction.note ?? 'Transaction',
             type: transaction.type,
             amount: transaction.amount,
@@ -101,13 +119,14 @@ export const TransactionProvider = ({ children }) => {
       console.error('[addTransaction] Error:', err.message);
       return null;
     }
-  }, []);
+  }, [user]);
 
   const addGoalDeposit = useCallback(async (amount) => {
+    if (!user || !goalState) return;
     try {
       const { data: depositData, error: depositError } = await supabase
         .from('goal_deposits')
-        .insert([{ amount, goal_id: 1 }])
+        .insert([{ amount, user_id: user.id, goal_id: goalState.id ?? null }])
         .select()
         .single();
 
@@ -117,7 +136,7 @@ export const TransactionProvider = ({ children }) => {
       const { error: goalUpdateError } = await supabase
         .from('goals')
         .update({ current: newCurrent })
-        .eq('id', 1);
+        .eq('user_id', user.id);
 
       if (goalUpdateError) throw goalUpdateError;
 
@@ -125,6 +144,7 @@ export const TransactionProvider = ({ children }) => {
         .from('transactions')
         .insert([
           {
+            user_id: user.id,
             title: 'Deposit to Goal',
             type: 'expense',
             amount,
@@ -147,7 +167,44 @@ export const TransactionProvider = ({ children }) => {
     } catch (err) {
       console.error('[addGoalDeposit] Error:', err.message);
     }
-  }, [goalState.current]);
+  }, [user, goalState]);
+
+  /**
+   * updateGoalTarget – upsert the goal row for the logged-in user.
+   * Creates the row if it doesn't exist yet (first-time setup).
+   */
+  const updateGoalTarget = useCallback(async ({ target, title }) => {
+    if (!user) return;
+    try {
+      const payload = {
+        user_id: user.id,
+        target: target ?? goalState?.target ?? 0,
+        title: title ?? goalState?.title ?? 'Savings Goal',
+        // preserve current savings amount if a row already exists
+        current: goalState?.current ?? 0,
+      };
+
+      const { data, error } = await supabase
+        .from('goals')
+        .upsert(payload, { onConflict: 'user_id' })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setGoalState((prev) => ({
+        ...(prev ?? {}),
+        id: data.id,
+        title: data.title ?? 'Savings Goal',
+        target: data.target ?? 0,
+        current: data.current ?? prev?.current ?? 0,
+        history: prev?.history ?? [],
+      }));
+    } catch (err) {
+      console.error('[updateGoalTarget] Error:', err.message);
+      throw err; // re-throw so the UI can show an error state
+    }
+  }, [user, goalState]);
 
   const value = {
     transactions,
@@ -157,6 +214,7 @@ export const TransactionProvider = ({ children }) => {
     currentBalance,
     goalState,
     addGoalDeposit,
+    updateGoalTarget,
     loading,
   };
 

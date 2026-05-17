@@ -15,19 +15,18 @@ const RIGHT_TABS = [
 ];
 
 /**
- * BottomNavigation
+ * BottomNavigation – Dark navy bottom bar with emerald active states.
  *
  * 5-item mobile bottom bar:
  *   Home | Transactions | [FAB +] | Goals | Profile
  *
- * The centre FAB is absolutely positioned to "float" above the bar edge
- * using `absolute -top-6 left-1/2 -translate-x-1/2`.
+ * The centre FAB is absolutely positioned to "float" above the bar edge.
  */
 const BottomNavigation = () => {
   return (
-    <div className="fixed bottom-0 w-full max-w-md z-50 bg-white">
+    <div className="fixed bottom-0 w-full max-w-md z-50 bg-slate-900">
       {/* Bar */}
-      <nav className="relative bg-white border-t border-gray-100 shadow-lg h-16">
+      <nav className="relative bg-slate-900 border-t border-slate-800 shadow-2xl h-16">
         <div className="flex items-center h-full">
           {/* Left: Home + Transactions */}
           <div className="flex flex-1 items-center justify-around">
@@ -55,11 +54,11 @@ const BottomNavigation = () => {
           className={({ isActive }) =>
             `absolute -top-6 left-1/2 -translate-x-1/2
              flex items-center justify-center
-             w-14 h-14 rounded-full shadow-xl
+             w-14 h-14 rounded-full shadow-xl shadow-emerald-900/50
              transition-transform active:scale-90
              ${isActive
-               ? 'bg-emerald-700 ring-4 ring-emerald-200'
-               : 'bg-[#189C63]'
+               ? 'bg-emerald-600 ring-4 ring-emerald-500/30'
+               : 'bg-emerald-500 hover:bg-emerald-400'
              }`
           }
         >
@@ -81,7 +80,7 @@ const NavItem = ({ to, icon: Icon, label, id }) => (
     end={to === '/'}
     className={({ isActive }) =>
       `flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors
-       ${isActive ? 'text-[#189C63]' : 'text-gray-400 hover:text-gray-600'}`
+       ${isActive ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'}`
     }
   >
     {({ isActive }) => (
