@@ -50,29 +50,44 @@ const BalanceCard = ({ balance }) => (
 );
 
 /** Income / Expense summary row */
-const SummaryRow = ({ totalIncome, totalExpense }) => (
-  <div className="flex gap-3 mx-5 mt-4">
-    {/* Income card */}
-    <div className="flex-1 rounded-2xl bg-slate-800/60 border border-slate-700/60 p-4">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-xs text-slate-400 font-medium">Income</span>
-        <ArrowUpRight className="w-4 h-4 text-emerald-400" strokeWidth={2.5} />
-      </div>
-      <p className="text-sm font-bold text-white">{formatRupiah(totalIncome)}</p>
-      <p className="text-[11px] text-emerald-400 mt-0.5 font-medium">Total income</p>
-    </div>
+const SummaryRow = ({ totalIncome, totalExpense }) => {
+  // Expense ratio — safe against zero-income
+  const expPct = totalIncome > 0
+    ? Math.min(100, Math.round((totalExpense / totalIncome) * 100))
+    : null;
+  const remaining = totalIncome - totalExpense;
 
-    {/* Expense card */}
-    <div className="flex-1 rounded-2xl bg-slate-800/60 border border-slate-700/60 p-4">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-xs text-slate-400 font-medium">Expenses</span>
-        <ArrowDownRight className="w-4 h-4 text-red-400" strokeWidth={2.5} />
+  return (
+    <div className="flex gap-3 mx-5 mt-4">
+      {/* Income card */}
+      <div className="flex-1 rounded-2xl bg-slate-800/60 border border-slate-700/60 p-4">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-xs text-slate-400 font-medium">Income</span>
+          <ArrowUpRight className="w-4 h-4 text-emerald-400" strokeWidth={2.5} />
+        </div>
+        <p className="text-sm font-bold text-white">{formatRupiah(totalIncome)}</p>
+        <p className="text-[11px] text-emerald-400 mt-0.5 font-medium">
+          {expPct !== null
+            ? `${100 - expPct}% remaining`
+            : 'No income yet'}
+        </p>
       </div>
-      <p className="text-sm font-bold text-red-400">{formatRupiah(totalExpense)}</p>
-      <p className="text-[11px] text-red-400/80 mt-0.5 font-medium">Total expenses</p>
+
+      {/* Expense card */}
+      <div className="flex-1 rounded-2xl bg-slate-800/60 border border-slate-700/60 p-4">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-xs text-slate-400 font-medium">Expenses</span>
+          <ArrowDownRight className="w-4 h-4 text-red-400" strokeWidth={2.5} />
+        </div>
+        <p className="text-sm font-bold text-red-400">{formatRupiah(totalExpense)}</p>
+        <p className="text-[11px] mt-0.5 font-medium"
+           style={{ color: expPct !== null && expPct > 80 ? '#f87171' : '#94a3b8' }}>
+          {expPct !== null ? `Exp ${expPct}% from income` : '—'}
+        </p>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 /** Savings goal progress card – driven by live context data */
 const SavingsGoalCard = ({ goalState }) => {
@@ -101,7 +116,7 @@ const SavingsGoalCard = ({ goalState }) => {
     if (percentage >= 75) return "Almost there! You're doing great 💪";
     if (percentage >= 50) return "Awesome! You're halfway there 🎉";
     if (percentage >= 25) return 'Good progress! Keep it up 🚀';
-    return 'Every deposit counts. Keep going! 💰';
+    return 'Keep depositing, bro!';
   };
 
   return (

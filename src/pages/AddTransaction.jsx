@@ -84,32 +84,42 @@ const AmountDisplay = ({ rawAmount, type }) => {
 const CategorySelector = ({ selectedId, onSelect }) => (
   <div className="mt-4 px-4">
     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Category</p>
-    <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
-      {CATEGORIES.map(({ id, label, icon: Icon, color, activeColor }) => {
-        const isActive = selectedId === id;
-        return (
-          <button
-            key={id}
-            id={`category-${id}`}
-            onClick={() => onSelect(id)}
-            className="flex flex-col items-center gap-1.5 shrink-0"
-          >
-            <div
-              className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-200
-                          ${isActive
-                            ? `${activeColor} shadow-md scale-105 ring-2 ring-offset-1 ring-offset-slate-900 ring-current`
-                            : `${color} hover:scale-105 opacity-70`
-                          }`}
+    {/* Scroll container with left/right gradient fade indicators */}
+    <div className="relative">
+      {/* Left fade */}
+      <div className="pointer-events-none absolute left-0 top-0 h-full w-6 z-10
+                      bg-gradient-to-r from-slate-900 to-transparent" />
+      {/* Right fade */}
+      <div className="pointer-events-none absolute right-0 top-0 h-full w-6 z-10
+                      bg-gradient-to-l from-slate-900 to-transparent" />
+
+      <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
+        {CATEGORIES.map(({ id, label, icon: Icon, color, activeColor }) => {
+          const isActive = selectedId === id;
+          return (
+            <button
+              key={id}
+              id={`category-${id}`}
+              onClick={() => onSelect(id)}
+              className="flex flex-col items-center gap-1.5 shrink-0"
             >
-              <Icon className={`w-6 h-6 ${isActive ? 'text-white' : ''}`} strokeWidth={isActive ? 2.5 : 2} />
-            </div>
-            <span className={`text-[10px] font-medium leading-tight max-w-[56px] text-center
-                              ${isActive ? 'text-slate-200' : 'text-slate-500'}`}>
-              {label}
-            </span>
-          </button>
-        );
-      })}
+              <div
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-200
+                            ${isActive
+                              ? `${activeColor} shadow-md scale-105 ring-2 ring-offset-1 ring-offset-slate-900 ring-current`
+                              : `${color} hover:scale-105 opacity-70`
+                            }`}
+              >
+                <Icon className={`w-6 h-6 ${isActive ? 'text-white' : ''}`} strokeWidth={isActive ? 2.5 : 2} />
+              </div>
+              <span className={`text-[10px] font-medium leading-tight max-w-[56px] text-center
+                                ${isActive ? 'text-slate-200' : 'text-slate-500'}`}>
+                {label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   </div>
 );

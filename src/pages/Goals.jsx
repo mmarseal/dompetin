@@ -183,6 +183,13 @@ const GoalCard = ({ goal, onEditClick }) => {
   );
 };
 
+const QUICK_AMOUNTS = [
+  { label: '50rb',  value: 50000  },
+  { label: '100rb', value: 100000 },
+  { label: '200rb', value: 200000 },
+  { label: '500rb', value: 500000 },
+];
+
 const DepositInput = ({ onDeposit }) => {
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
@@ -200,6 +207,26 @@ const DepositInput = ({ onDeposit }) => {
   return (
     <div className="mx-5 mt-6 bg-slate-800/60 border border-slate-700/60 p-4 rounded-2xl">
       <p className="text-sm font-bold text-slate-200 mb-3">Add to Savings</p>
+
+      {/* Quick amount chips */}
+      <div className="flex gap-2 mb-3">
+        {QUICK_AMOUNTS.map(({ label, value }) => (
+          <button
+            key={value}
+            onClick={() => setAmount(String(value))}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-bold border transition-all active:scale-95
+                        ${
+                          amount === String(value)
+                            ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm'
+                            : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-emerald-500/50 hover:text-emerald-400'
+                        }`}
+          >
+            Rp {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Manual input + Deposit button */}
       <div className="flex gap-2">
         <div className="relative flex-1">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-sm">Rp</span>
