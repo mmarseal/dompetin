@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Wallet, Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-/* ─── Google SVG Icon ────────────────────────────────────────────────────── */
+
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden="true">
     <path
@@ -24,7 +24,6 @@ const GoogleIcon = () => (
   </svg>
 );
 
-/* ─── Input Field ────────────────────────────────────────────────────────── */
 const InputField = ({ id, label, type, value, onChange, placeholder, icon: Icon, rightElement }) => (
   <div className="flex flex-col gap-1.5">
     <label htmlFor={id} className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
@@ -54,22 +53,22 @@ const InputField = ({ id, label, type, value, onChange, placeholder, icon: Icon,
   </div>
 );
 
-/* ─── Main Login Component ───────────────────────────────────────────────── */
+
 const Login = () => {
   const { signIn, signUp, signInWithGoogle } = useAuth();
 
   const [isRegister, setIsRegister] = useState(false);
-  const [email, setEmail]       = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPw, setShowPw]     = useState(false);
-  const [loading, setLoading]   = useState(false);
+  const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [error, setError]       = useState('');
-  const [success, setSuccess]   = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const resetFeedback = () => { setError(''); setSuccess(''); };
 
-  /* ── Email/Password submit ─────────────────────────────────────────────── */
+  /* Email/Password submit */
   const handleSubmit = async (e) => {
     e.preventDefault();
     resetFeedback();
@@ -90,7 +89,6 @@ const Login = () => {
         setSuccess('Account created! Please check your email to confirm your address.');
       } else {
         await signIn({ email, password });
-        // AuthContext listener updates user → App re-renders automatically
       }
     } catch (err) {
       setError(err.message ?? 'Something went wrong. Please try again.');
@@ -99,20 +97,19 @@ const Login = () => {
     }
   };
 
-  /* ── Google OAuth ──────────────────────────────────────────────────────── */
+  /* Google OAuth */
   const handleGoogle = async () => {
     resetFeedback();
     setGoogleLoading(true);
     try {
       await signInWithGoogle();
-      // Redirect is handled by Supabase; page will navigate away
+      // Redirect is handled by Supabase
     } catch (err) {
       setError(err.message ?? 'Google sign-in failed.');
       setGoogleLoading(false);
     }
   };
 
-  /* ── Toggle mode ───────────────────────────────────────────────────────── */
   const toggleMode = () => {
     resetFeedback();
     setEmail('');
@@ -125,7 +122,7 @@ const Login = () => {
       {/* Phone shell container */}
       <div className="relative w-full max-w-md min-h-screen bg-slate-900 shadow-2xl overflow-hidden flex flex-col">
 
-        {/* ── Decorative gradient blobs ──────────────────────────────────── */}
+        {/* Decorative gradient blobs */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full"
@@ -137,7 +134,6 @@ const Login = () => {
           style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)' }}
         />
 
-        {/* ── Top branding area ─────────────────────────────────────────── */}
         <div className="flex flex-col items-center pt-16 pb-8 px-8 select-none">
           <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center mb-5 shadow-lg shadow-emerald-500/10">
             <Wallet className="w-8 h-8 text-emerald-400" strokeWidth={2.5} />
@@ -146,11 +142,9 @@ const Login = () => {
           <p className="text-slate-500 text-sm mt-1 font-medium">Track your money. Control your life.</p>
         </div>
 
-        {/* ── Card ──────────────────────────────────────────────────────── */}
         <div className="flex-1 px-6 pb-10">
           <div className="bg-slate-800/50 border border-slate-700/60 rounded-2xl p-6 backdrop-blur-sm shadow-xl">
 
-            {/* Mode heading */}
             <h2 className="text-lg font-bold text-white mb-1">
               {isRegister ? 'Create an account' : 'Welcome back'}
             </h2>
@@ -160,7 +154,6 @@ const Login = () => {
                 : 'Sign in to continue to Dompetin.'}
             </p>
 
-            {/* ── Feedback banners ────────────────────────────────────── */}
             {error && (
               <div
                 role="alert"
@@ -180,7 +173,7 @@ const Login = () => {
               </div>
             )}
 
-            {/* ── Form ────────────────────────────────────────────────── */}
+            {/* Form */}
             <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
               <InputField
                 id="auth-email"
@@ -211,7 +204,6 @@ const Login = () => {
                 }
               />
 
-              {/* Submit button */}
               <button
                 id="auth-submit-btn"
                 type="submit"
@@ -227,14 +219,14 @@ const Login = () => {
               </button>
             </form>
 
-            {/* ── Divider ─────────────────────────────────────────────── */}
+            {/* Divider */}
             <div className="flex items-center gap-3 my-5" aria-hidden="true">
               <div className="flex-1 h-px bg-slate-700/80" />
               <span className="text-slate-600 text-xs font-semibold tracking-widest uppercase">or</span>
               <div className="flex-1 h-px bg-slate-700/80" />
             </div>
 
-            {/* ── Google button ────────────────────────────────────────── */}
+            {/* Google button */}
             <button
               id="google-signin-btn"
               type="button"
@@ -259,7 +251,7 @@ const Login = () => {
               )}
             </button>
 
-            {/* ── Toggle register/login ─────────────────────────────────── */}
+            {/* Toggle register/login */}
             <p className="text-center text-slate-500 text-xs mt-6">
               {isRegister ? 'Already have an account?' : "Don't have an account?"}{' '}
               <button

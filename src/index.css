@@ -18,3 +18,26 @@
     scroll-behavior: smooth;
   }
 }
+
+/* Hide scrollbar cross-browser */
+@layer utilities {
+  .scrollbar-hide,
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar,
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Bottom-sheet slide-up animation */
+@keyframes slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.28s cubic-bezier(0.32, 0.72, 0, 1) both;
+}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Pencil, Plus, X, Check } from 'lucide-react';
+import { ChevronLeft, Pencil, Plus, X, Check, Trash2 } from 'lucide-react';
 import { formatRupiah } from '../utils/currency';
 import { useTransactions } from '../context/TransactionContext';
 
@@ -10,10 +10,6 @@ const formatDepositDate = (isoTimestamp) => {
   if (isNaN(date.getTime())) return '—';
   return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 };
-
-// ---------------------------------------------------------------------------
-// Edit Goal Modal (dark themed bottom sheet)
-// ---------------------------------------------------------------------------
 
 const EditGoalModal = ({ currentTarget, currentTitle, onSave, onClose }) => {
   const [title, setTitle] = useState(currentTitle ?? 'Savings Goal');
@@ -111,7 +107,6 @@ const EditGoalModal = ({ currentTarget, currentTitle, onSave, onClose }) => {
   );
 };
 
-// ---------------------------------------------------------------------------
 
 const Header = () => {
   const navigate = useNavigate();
@@ -184,7 +179,7 @@ const GoalCard = ({ goal, onEditClick }) => {
 };
 
 const QUICK_AMOUNTS = [
-  { label: '50rb',  value: 50000  },
+  { label: '50rb', value: 50000 },
   { label: '100rb', value: 100000 },
   { label: '200rb', value: 200000 },
   { label: '500rb', value: 500000 },
@@ -215,11 +210,10 @@ const DepositInput = ({ onDeposit }) => {
             key={value}
             onClick={() => setAmount(String(value))}
             className={`flex-1 py-1.5 rounded-lg text-xs font-bold border transition-all active:scale-95
-                        ${
-                          amount === String(value)
-                            ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm'
-                            : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-emerald-500/50 hover:text-emerald-400'
-                        }`}
+                        ${amount === String(value)
+                ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm'
+                : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-emerald-500/50 hover:text-emerald-400'
+              }`}
           >
             Rp {label}
           </button>
@@ -255,7 +249,7 @@ const DepositInput = ({ onDeposit }) => {
   );
 };
 
-const DepositHistoryList = ({ history = [] }) => (
+const DepositHistoryList = ({ history = [], onDelete }) => (
   <div className="mt-8 px-5">
     <div className="flex items-center justify-between mb-4">
       <h2 className="text-sm font-bold text-slate-200">Deposit History</h2>
@@ -273,7 +267,22 @@ const DepositHistoryList = ({ history = [] }) => (
               </div>
               <span className="text-sm font-semibold text-slate-100">+ {formatRupiah(item.amount)}</span>
             </div>
-            <span className="text-sm text-slate-500 font-medium">{formatDepositDate(item.created_at)}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-500 font-medium">{formatDepositDate(item.created_at)}</span>
+              <button
+                onClick={() => {
+                  if (window.confirm('Delete this deposit?')) {
+                    onDelete(item.id, item.amount);
+                  }
+                }}
+                aria-label="Delete deposit"
+                className="w-7 h-7 rounded-full flex items-center justify-center
+                           text-slate-600 hover:text-red-400 hover:bg-red-400/10
+                           transition-colors active:scale-90"
+              >
+                <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
+              </button>
+            </div>
           </div>
         ))
       )}
@@ -281,12 +290,9 @@ const DepositHistoryList = ({ history = [] }) => (
   </div>
 );
 
-// ---------------------------------------------------------------------------
-// Main Component
-// ---------------------------------------------------------------------------
 
 const Goals = () => {
-  const { goalState, addGoalDeposit, updateGoalTarget } = useTransactions();
+  const { goalState, addGoalDeposit, updateGoalTarget, deleteGoalDeposit } = useTransactions();
   const [showEditModal, setShowEditModal] = useState(false);
 
   const safeGoal = goalState || {
@@ -301,7 +307,7 @@ const Goals = () => {
       <Header />
       <GoalCard goal={safeGoal} onEditClick={() => setShowEditModal(true)} />
       <DepositInput onDeposit={addGoalDeposit} />
-      <DepositHistoryList history={safeGoal.history} />
+      <DepositHistoryList history={safeGoal.history} onDelete={deleteGoalDeposit} />
 
       {showEditModal && (
         <EditGoalModal

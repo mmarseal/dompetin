@@ -9,75 +9,62 @@ import {
   MoreHorizontal,
 } from 'lucide-react';
 
-/**
- * src/constants/categories.js
- *
- * Single source of truth for all transaction categories.
- * Used by AddTransaction (category picker) and Home (transaction icon/color lookup).
- *
- * Shape:
- *  id          – internal key
- *  label       – stored in the transaction object
- *  icon        – Lucide React component
- *  color       – Tailwind classes for the icon bubble (inactive)
- *  activeColor – Tailwind bg class for the selected state in the picker
- */
 export const CATEGORIES = [
   {
     id: 'food',
     label: 'Food',
     icon: Utensils,
-    color: 'bg-orange-100 text-orange-500',
+    color: 'bg-orange-500/20 text-orange-400',
     activeColor: 'bg-orange-500',
   },
   {
     id: 'transport',
     label: 'Transport',
     icon: Car,
-    color: 'bg-blue-100 text-blue-500',
+    color: 'bg-blue-500/20 text-blue-400',
     activeColor: 'bg-blue-500',
   },
   {
     id: 'shopping',
     label: 'Shopping',
     icon: ShoppingBag,
-    color: 'bg-pink-100 text-pink-500',
+    color: 'bg-pink-500/20 text-pink-400',
     activeColor: 'bg-pink-500',
   },
   {
     id: 'entertainment',
     label: 'Entertainment',
     icon: Music,
-    color: 'bg-purple-100 text-purple-500',
+    color: 'bg-purple-500/20 text-purple-400',
     activeColor: 'bg-purple-500',
   },
   {
     id: 'bills',
     label: 'Bills',
     icon: Zap,
-    color: 'bg-yellow-100 text-yellow-600',
+    color: 'bg-yellow-500/20 text-yellow-400',
     activeColor: 'bg-yellow-500',
   },
   {
     id: 'health',
     label: 'Health',
     icon: Heart,
-    color: 'bg-red-100 text-red-500',
+    color: 'bg-red-500/20 text-red-400',
     activeColor: 'bg-red-500',
   },
   {
     id: 'salary',
     label: 'Salary',
     icon: Briefcase,
-    color: 'bg-emerald-100 text-emerald-600',
+    color: 'bg-emerald-500/20 text-emerald-400',
     activeColor: 'bg-emerald-500',
   },
   {
     id: 'others',
     label: 'Others',
     icon: MoreHorizontal,
-    color: 'bg-gray-100 text-gray-500',
-    activeColor: 'bg-gray-500',
+    color: 'bg-slate-500/20 text-slate-400',
+    activeColor: 'bg-slate-500',
   },
 ];
 

@@ -15,12 +15,12 @@ export const useTransactions = () => {
 export const TransactionProvider = ({ children }) => {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState([]);
-  // null means "not loaded / no goal row exists yet"
   const [goalState, setGoalState] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showBalance, setShowBalance] = useState(true);
+  const toggleBalance = useCallback(() => setShowBalance((v) => !v), []);
 
   useEffect(() => {
-    // Clear state immediately when there is no logged-in user
     if (!user) {
       setTransactions([]);
       setGoalState(null);
@@ -31,7 +31,6 @@ export const TransactionProvider = ({ children }) => {
     const fetchAll = async () => {
       setLoading(true);
       try {
-        // Fetch only the current user's transactions
         const { data: txData, error: txError } = await supabase
           .from('transactions')
           .select('*')
@@ -41,7 +40,6 @@ export const TransactionProvider = ({ children }) => {
         if (txError) throw txError;
         setTransactions(txData ?? []);
 
-        // Fetch the current user's goal row
         const { data: goalData, error: goalError } = await supabase
           .from('goals')
           .select('*')
@@ -50,7 +48,6 @@ export const TransactionProvider = ({ children }) => {
 
         if (goalError) throw goalError;
 
-        // Fetch only the current user's goal deposits
         const { data: depositsData, error: depositsError } = await supabase
           .from('goal_deposits')
           .select('*')
@@ -69,7 +66,6 @@ export const TransactionProvider = ({ children }) => {
             history: depositsData ?? [],
           });
         } else {
-          // No goal row yet — keep null but still store any stray deposits
           setGoalState(null);
         }
       } catch (err) {
@@ -169,6 +165,120 @@ export const TransactionProvider = ({ children }) => {
     }
   }, [user, goalState]);
 
+  const deleteTransaction = useCallback(async (id) => {
+    if (!user) return;
+    try {
+
+      const txToDelete = transactions.find((t) => t.id === id);
+
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setTransactions((prev) => prev.filter((t) => t.id !== id));
+
+      if (txToDelete?.title === 'Deposit to Goal' && goalState) {
+        const amount = txToDelete.amount ?? 0;
+
+        const { data: depositMatch } = await supabase
+          .from('goal_deposits')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('amount', amount)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (depositMatch) {
+          await supabase
+            .from('goal_deposits')
+            .delete()
+            .eq('id', depositMatch.id)
+            .eq('user_id', user.id);
+        }
+
+        // Roll back goals.current
+        const newCurrent = Math.max(0, goalState.current - amount);
+        await supabase
+          .from('goals')
+          .update({ current: newCurrent })
+          .eq('user_id', user.id);
+
+        const [{ data: goalData }, { data: depositsData }] = await Promise.all([
+          supabase.from('goals').select('*').eq('user_id', user.id).maybeSingle(),
+          supabase.from('goal_deposits').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        ]);
+
+        if (goalData) {
+          setGoalState((prev) => ({
+            ...(prev ?? {}),
+            current: goalData.current ?? newCurrent,
+            history: depositsData ?? [],
+          }));
+        }
+      }
+    } catch (err) {
+      console.error('[deleteTransaction] Error:', err.message);
+    }
+  }, [user, transactions, goalState]);
+
+  const deleteGoalDeposit = useCallback(async (id, amount) => {
+    if (!user || !goalState) return;
+    try {
+      // Delete the deposit row
+      const { error: depositError } = await supabase
+        .from('goal_deposits')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (depositError) throw depositError;
+
+      // Roll back goals.current
+      const newCurrent = Math.max(0, goalState.current - amount);
+      const { error: goalUpdateError } = await supabase
+        .from('goals')
+        .update({ current: newCurrent })
+        .eq('user_id', user.id);
+
+      if (goalUpdateError) throw goalUpdateError;
+
+      // Find and delete the corresponding "Deposit to Goal" transaction.
+      // Match on title + amount + user_id
+      const { data: txMatch } = await supabase
+        .from('transactions')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('title', 'Deposit to Goal')
+        .eq('amount', amount)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (txMatch) {
+        await supabase
+          .from('transactions')
+          .delete()
+          .eq('id', txMatch.id)
+          .eq('user_id', user.id);
+
+        setTransactions((prev) => prev.filter((t) => t.id !== txMatch.id));
+      }
+
+      setGoalState((prev) => ({
+        ...prev,
+        current: newCurrent,
+        history: prev.history.filter((d) => d.id !== id),
+      }));
+    } catch (err) {
+      console.error('[deleteGoalDeposit] Error:', err.message);
+    }
+  }, [user, goalState]);
+
   /**
    * updateGoalTarget – upsert the goal row for the logged-in user.
    * Creates the row if it doesn't exist yet (first-time setup).
@@ -180,7 +290,6 @@ export const TransactionProvider = ({ children }) => {
         user_id: user.id,
         target: target ?? goalState?.target ?? 0,
         title: title ?? goalState?.title ?? 'Savings Goal',
-        // preserve current savings amount if a row already exists
         current: goalState?.current ?? 0,
       };
 
@@ -202,20 +311,24 @@ export const TransactionProvider = ({ children }) => {
       }));
     } catch (err) {
       console.error('[updateGoalTarget] Error:', err.message);
-      throw err; // re-throw so the UI can show an error state
+      throw err;
     }
   }, [user, goalState]);
 
   const value = {
     transactions,
     addTransaction,
+    deleteTransaction,
     totalIncome,
     totalExpense,
     currentBalance,
     goalState,
     addGoalDeposit,
+    deleteGoalDeposit,
     updateGoalTarget,
     loading,
+    showBalance,
+    toggleBalance,
   };
 
   return (

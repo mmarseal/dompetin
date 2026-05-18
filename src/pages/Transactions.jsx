@@ -1,11 +1,9 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+import { Trash2, Sparkles } from 'lucide-react';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { useTransactions } from '../context/TransactionContext';
 import { getCategoryByLabel } from '../constants/categories';
 import { formatRupiah } from '../utils/currency';
-
-// ---------------------------------------------------------------------------
-// Constants & Helpers
-// ---------------------------------------------------------------------------
 
 const CATEGORY_CHART_COLORS = {
   Food: '#F97316', Transport: '#3B82F6', Shopping: '#EC4899',
@@ -30,7 +28,6 @@ const fmtTime = (iso) => {
   return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
 };
 
-/** Build an array of the last N days (default 30) starting from today */
 const buildDateRange = (n = 30) => {
   const days = [];
   const today = new Date();
@@ -53,18 +50,14 @@ const isSameDay = (a, b) =>
 const getPeriodStart = (period) => {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
-  if (period === 'Daily')   { /* today only – handled by selectedDate */ return d; }
-  if (period === 'Weekly')  { d.setDate(d.getDate() - 6); return d; }
+  if (period === 'Daily') { /* today only – handled by selectedDate */ return d; }
+  if (period === 'Weekly') { d.setDate(d.getDate() - 6); return d; }
   if (period === 'Monthly') { d.setDate(1); return d; }
-  if (period === 'Yearly')  { d.setMonth(0, 1); return d; }
+  if (period === 'Yearly') { d.setMonth(0, 1); return d; }
   return null;
 };
 
 const PERIODS = ['Daily', 'Weekly', 'Monthly', 'Yearly'];
-
-// ---------------------------------------------------------------------------
-// Period Tab Pills
-// ---------------------------------------------------------------------------
 
 const PeriodTabs = ({ active, onChange }) => (
   <div className="flex gap-2 px-5 pb-2">
@@ -73,11 +66,10 @@ const PeriodTabs = ({ active, onChange }) => (
         key={p}
         onClick={() => onChange(p)}
         className={`flex-1 py-2 rounded-full text-xs font-bold transition-all duration-200 active:scale-95
-                    ${
-                      active === p
-                        ? 'bg-[#189C63] text-white shadow-md shadow-emerald-900/40'
-                        : 'bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-600'
-                    }`}
+                    ${active === p
+            ? 'bg-[#189C63] text-white shadow-md shadow-emerald-900/40'
+            : 'bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-600'
+          }`}
       >
         {p}
       </button>
@@ -85,6 +77,85 @@ const PeriodTabs = ({ active, onChange }) => (
   </div>
 );
 
+const AIInsightWidget = ({ transactions, period }) => {
+  const [insight, setInsight] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // Reset insight whenever the filtered transactions change (period/date switched)
+  useEffect(() => { setInsight(''); }, [transactions]);
+
+  const handleGenerateInsight = async () => {
+    if (loading) return;
+
+    if (!transactions || transactions.length === 0) {
+      setInsight('Belum ada transaksi bro, aman!');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+      const totalIncome = transactions
+        .filter((t) => t.type === 'income')
+        .reduce((sum, t) => sum + (t.amount ?? 0), 0);
+      const totalExpense = transactions
+        .filter((t) => t.type === 'expense')
+        .reduce((sum, t) => sum + (t.amount ?? 0), 0);
+
+      const prompt = `Ini data keuanganku periode ini. Pemasukan: Rp${totalIncome}, Pengeluaran: Rp${totalExpense}. Rincian transaksi: ${JSON.stringify(transactions.map((t) => ({ kategori: t.category, nominal: t.amount, tipe: t.type })))}. Berikan 1 atau 2 kalimat singkat insight atau roasting keuangan yang asik, pakai bahasa gaul Gen Z Indonesia (pakai lu/gua, bro). Jangan pakai format markdown/bold/asterisk, langsung teks aja.`;
+
+      const result = await model.generateContent(prompt);
+      setInsight(result.response.text());
+    } catch (err) {
+      console.error('[AIInsightWidget] Gemini error:', err);
+      setInsight('Waduh, AI-nya lagi pusing mikirin keuangan lu. Coba lagi nanti ya!');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-gradient-to-r from-[#161a22] to-[#1a202c] border border-[#2a2d35]
+                    rounded-xl p-4 my-4 mx-5">
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-2">
+        <Sparkles
+          className={`w-3.5 h-3.5 ${loading ? 'animate-pulse' : ''}`}
+          style={{ color: '#1fba7e' }}
+          strokeWidth={2}
+        />
+        <span className="text-xs font-semibold tracking-wider" style={{ color: '#1fba7e' }}>
+          AI INSIGHT
+        </span>
+        <span className="ml-auto text-[10px] text-slate-600 font-medium uppercase tracking-wide">
+          {period}
+        </span>
+      </div>
+      {/* Body */}
+      {loading ? (
+        <p className="text-sm leading-relaxed italic animate-pulse" style={{ color: '#4a5568' }}>
+          AI lagi nerawang dompet lu…
+        </p>
+      ) : insight ? (
+        <p className="text-sm leading-relaxed italic" style={{ color: '#8a9bb0' }}>
+          {insight}
+        </p>
+      ) : (
+        <button
+          onClick={handleGenerateInsight}
+          className="flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-semibold
+                     transition-all duration-200 active:scale-95 hover:bg-[#1fba7e]/10"
+          style={{ borderColor: '#1fba7e33', color: '#1fba7e' }}
+        >
+          <Sparkles className="w-3 h-3" strokeWidth={2} />
+          Minta Nasihat AI
+        </button>
+      )}
+    </div>
+  );
+};
 
 const DatePicker = ({ selectedDate, onSelect }) => {
   const dates = useMemo(() => buildDateRange(30), []);
@@ -125,11 +196,11 @@ const DatePicker = ({ selectedDate, onSelect }) => {
               className={`flex flex-col items-center shrink-0 rounded-xl px-3 py-2 min-w-[48px]
                           transition-all duration-200 active:scale-95
                           ${isActive
-                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-900/40'
-                            : isToday
-                              ? 'bg-slate-800 border border-emerald-500/50 text-emerald-400'
-                              : 'bg-slate-800/60 border border-slate-700/60 text-slate-400 hover:bg-slate-800'
-                          }`}
+                  ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-900/40'
+                  : isToday
+                    ? 'bg-slate-800 border border-emerald-500/50 text-emerald-400'
+                    : 'bg-slate-800/60 border border-slate-700/60 text-slate-400 hover:bg-slate-800'
+                }`}
             >
               <span className="text-[10px] font-semibold uppercase leading-none">
                 {DAYS_ID[date.getDay()]}
@@ -144,10 +215,6 @@ const DatePicker = ({ selectedDate, onSelect }) => {
     </div>
   );
 };
-
-// ---------------------------------------------------------------------------
-// Summary cards
-// ---------------------------------------------------------------------------
 
 const WeeklySummary = ({ totalSpending, transactionCount, selectedDate }) => (
   <div className="px-5">
@@ -174,10 +241,6 @@ const WeeklySummary = ({ totalSpending, transactionCount, selectedDate }) => (
     </div>
   </div>
 );
-
-// ---------------------------------------------------------------------------
-// Donut chart
-// ---------------------------------------------------------------------------
 
 const CategoryChart = ({ segments, totalSpending }) => (
   <div className="px-5 mt-5">
@@ -216,15 +279,18 @@ const CategoryChart = ({ segments, totalSpending }) => (
   </div>
 );
 
-// ---------------------------------------------------------------------------
-// Transaction list
-// ---------------------------------------------------------------------------
-
-const TransactionRow = ({ transaction }) => {
+const TransactionRow = ({ transaction, onDelete }) => {
   const meta = getCategoryByLabel(transaction.category);
   const Icon = meta.icon;
   const isIncome = transaction.type === 'income';
   const displayTitle = transaction.title || transaction.note || transaction.category;
+
+  const handleDelete = () => {
+    if (window.confirm('Delete this transaction?')) {
+      onDelete(transaction.id);
+    }
+  };
+
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${meta.color}`}>
@@ -240,11 +306,20 @@ const TransactionRow = ({ transaction }) => {
         </p>
         <p className="text-[10px] text-slate-500 mt-0.5">{fmtTime(transaction.created_at)}</p>
       </div>
+      <button
+        onClick={handleDelete}
+        aria-label="Delete transaction"
+        className="ml-1 w-7 h-7 rounded-full flex items-center justify-center
+                   text-slate-600 hover:text-red-400 hover:bg-red-400/10
+                   transition-colors active:scale-90 shrink-0"
+      >
+        <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
+      </button>
     </div>
   );
 };
 
-const TransactionList = ({ transactions, selectedDate }) => (
+const TransactionList = ({ transactions, selectedDate, onDelete }) => (
   <div className="mt-5 px-5 mb-6">
     <h2 className="text-base font-bold text-slate-200 mb-3">Transaction List</h2>
     {transactions.length === 0 ? (
@@ -259,40 +334,31 @@ const TransactionList = ({ transactions, selectedDate }) => (
       </div>
     ) : (
       <div className="bg-slate-800/60 border border-slate-700/60 rounded-2xl divide-y divide-slate-700/40">
-        {transactions.map((tx) => <TransactionRow key={tx.id} transaction={tx} />)}
+        {transactions.map((tx) => <TransactionRow key={tx.id} transaction={tx} onDelete={onDelete} />)}
       </div>
     )}
   </div>
 );
 
-// ---------------------------------------------------------------------------
-// Main page
-// ---------------------------------------------------------------------------
-
 const Transactions = () => {
-  const { transactions } = useTransactions();
-  // Period tab state — default Weekly matches the reference image
+  const { transactions, deleteTransaction } = useTransactions();
   const [period, setPeriod] = useState('Weekly');
-  // null = show all days; Date = filter to that specific day (only active when period === 'Daily')
+  // null = show all days
   const [selectedDate, setSelectedDate] = useState(null);
 
-  // When switching period, clear the date selection unless going to Daily
   const handlePeriodChange = (p) => {
     setPeriod(p);
     if (p !== 'Daily') setSelectedDate(null);
   };
 
-  // Filter transactions by period + optional selected date
   const filtered = useMemo(() => {
     if (period === 'Daily' && selectedDate) {
-      // Exact day filter
       return transactions.filter((t) => {
         if (!t.created_at) return false;
         return isSameDay(new Date(t.created_at), selectedDate);
       });
     }
     if (period === 'Daily' && !selectedDate) {
-      // Daily tab but no specific day chosen → show today
       const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
       return transactions.filter((t) => {
         if (!t.created_at) return false;
@@ -343,8 +409,9 @@ const Transactions = () => {
       )}
 
       <WeeklySummary totalSpending={totalSpending} transactionCount={expenses.length} selectedDate={selectedDate} />
+      <AIInsightWidget transactions={filtered} period={period} />
       <CategoryChart segments={chartSegments} totalSpending={totalSpending} />
-      <TransactionList transactions={filtered} selectedDate={selectedDate} />
+      <TransactionList transactions={filtered} selectedDate={selectedDate} onDelete={deleteTransaction} />
     </div>
   );
 };

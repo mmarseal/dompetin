@@ -1,19 +1,19 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Delete, Check, TrendingUp, TrendingDown } from 'lucide-react';
 import { useTransactions } from '../context/TransactionContext';
+import { useState } from 'react';
 import { CATEGORIES } from '../constants/categories';
 
 const TRANSACTION_TYPES = [
   { id: 'expense', label: 'Expense', icon: TrendingDown },
-  { id: 'income',  label: 'Income',  icon: TrendingUp  },
+  { id: 'income', label: 'Income', icon: TrendingUp },
 ];
 
 const KEYPAD_ROWS = [
-  ['1','2','3'],
-  ['4','5','6'],
-  ['7','8','9'],
-  ['.','0','DEL'],
+  ['1', '2', '3'],
+  ['4', '5', '6'],
+  ['7', '8', '9'],
+  ['.', '0', 'DEL'],
 ];
 
 const formatDisplayAmount = (raw) => {
@@ -84,42 +84,39 @@ const AmountDisplay = ({ rawAmount, type }) => {
 const CategorySelector = ({ selectedId, onSelect }) => (
   <div className="mt-4 px-4">
     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Category</p>
-    {/* Scroll container with left/right gradient fade indicators */}
-    <div className="relative">
-      {/* Left fade */}
-      <div className="pointer-events-none absolute left-0 top-0 h-full w-6 z-10
-                      bg-gradient-to-r from-slate-900 to-transparent" />
-      {/* Right fade */}
-      <div className="pointer-events-none absolute right-0 top-0 h-full w-6 z-10
-                      bg-gradient-to-l from-slate-900 to-transparent" />
-
-      <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
-        {CATEGORIES.map(({ id, label, icon: Icon, color, activeColor }) => {
-          const isActive = selectedId === id;
-          return (
-            <button
-              key={id}
-              id={`category-${id}`}
-              onClick={() => onSelect(id)}
-              className="flex flex-col items-center gap-1.5 shrink-0"
+    <div
+      className="flex gap-4 overflow-x-auto hide-scrollbar py-2"
+      style={{ WebkitOverflowScrolling: 'touch' }}
+    >
+      {CATEGORIES.map(({ id, label, icon: Icon, color, activeColor }) => {
+        const isActive = selectedId === id;
+        return (
+          <button
+            key={id}
+            id={`category-${id}`}
+            onClick={() => onSelect(id)}
+            className="flex flex-col items-center gap-2 shrink-0"
+          >
+            <div
+              className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-200
+                          ${isActive
+                  ? `${activeColor} shadow-lg scale-105`
+                  : `${color} opacity-75 hover:opacity-100 hover:scale-105`
+                }`}
+              style={isActive ? { outline: '2px solid #1fba7e', outlineOffset: '4px' } : undefined}
             >
-              <div
-                className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-200
-                            ${isActive
-                              ? `${activeColor} shadow-md scale-105 ring-2 ring-offset-1 ring-offset-slate-900 ring-current`
-                              : `${color} hover:scale-105 opacity-70`
-                            }`}
-              >
-                <Icon className={`w-6 h-6 ${isActive ? 'text-white' : ''}`} strokeWidth={isActive ? 2.5 : 2} />
-              </div>
-              <span className={`text-[10px] font-medium leading-tight max-w-[56px] text-center
-                                ${isActive ? 'text-slate-200' : 'text-slate-500'}`}>
-                {label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+              <Icon
+                className={`w-6 h-6 ${isActive ? 'text-white' : ''}`}
+                strokeWidth={isActive ? 2.5 : 2}
+              />
+            </div>
+            <span className={`text-[10px] font-semibold leading-tight max-w-[60px] text-center
+                              ${isActive ? 'text-[#1fba7e]' : 'text-slate-500'}`}>
+              {label}
+            </span>
+          </button>
+        );
+      })}
     </div>
   </div>
 );
@@ -133,10 +130,9 @@ const NoteInput = ({ value, onChange }) => (
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder="Add a note (optional)…"
-      className="w-full bg-slate-800/60 border border-slate-700/80 rounded-xl px-4 py-3
-                 text-sm text-slate-100 placeholder-slate-600 font-medium
-                 focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:border-emerald-500/60
-                 transition-all"
+      className="w-full bg-[#161a22] border border-[#2a2d35] text-white
+                 focus:border-[#1fba7e] focus:ring-1 focus:ring-[#1fba7e]
+                 placeholder-[#8a9bb0] rounded-xl px-4 py-3 outline-none transition-all text-sm"
     />
   </div>
 );
@@ -151,9 +147,9 @@ const KeypadButton = ({ value, onPress }) => {
       className={`flex items-center justify-center rounded-2xl h-14
                   text-xl font-bold transition-all active:scale-95 select-none
                   ${isSpecial
-                    ? 'bg-slate-800 border border-slate-700 text-slate-400 hover:bg-slate-700'
-                    : 'bg-slate-800/80 border border-slate-700/60 text-slate-100 hover:bg-slate-700'
-                  }`}
+          ? 'bg-slate-800 border border-slate-700 text-slate-400 hover:bg-slate-700'
+          : 'bg-slate-800/80 border border-slate-700/60 text-slate-100 hover:bg-slate-700'
+        }`}
     >
       {value === 'DEL' ? <Delete className="w-5 h-5" strokeWidth={2} /> : value}
     </button>
@@ -175,9 +171,9 @@ const Keypad = ({ onPress, onConfirm, canConfirm }) => (
       className={`w-full flex items-center justify-center gap-2 py-4 rounded-2xl
                   text-white font-bold text-base transition-all active:scale-[0.98]
                   ${canConfirm
-                    ? 'bg-emerald-500 shadow-lg shadow-emerald-900/50 hover:bg-emerald-400'
-                    : 'bg-slate-800 text-slate-600 cursor-not-allowed border border-slate-700'
-                  }`}
+          ? 'bg-emerald-500 shadow-lg shadow-emerald-900/50 hover:bg-emerald-400'
+          : 'bg-slate-800 text-slate-600 cursor-not-allowed border border-slate-700'
+        }`}
     >
       <Check className="w-5 h-5" strokeWidth={2.5} />
       Save Transaction
@@ -221,7 +217,7 @@ const AddTransaction = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-full bg-slate-900 pb-24">
+    <div className="flex flex-col min-h-full bg-slate-900 pb-32">
       <Header onBack={() => navigate(-1)} />
       <TypeToggle activeType={type} onSelect={setType} />
       <AmountDisplay rawAmount={rawAmount} type={type} />
