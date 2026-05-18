@@ -58,25 +58,45 @@ Since Dompetin is built as a Progressive Web App, it does not require an App Sto
 
 Follow these instructions to set up the project locally.
 
-### 1. Clone the Repository
-```bash
-git clone [https://github.com/mmarseal/dompetin.git](https://github.com/mmarseal/dompetin.git)
-cd dompetin
+## 1. Clone the Repository
 
-### 2. Install Dependencies
-*Note: We use `--legacy-peer-deps` to safely bypass peer dependency conflicts between Vite 8.x and the current PWA plugin version.*
+```bash
+git clone https://github.com/mmarseal/dompetin.git
+cd dompetin
+```
+
+---
+
+## 2. Install Dependencies
+
+> We use `--legacy-peer-deps` to safely bypass peer dependency conflicts between Vite 8.x and the current PWA plugin version.
+
 ```bash
 npm install --legacy-peer-deps
+```
 
-### 3. Environment Variables Setup (.env)
-Create a .env file in the root directory and populate it with your credentials:
-```bash
+---
+
+## 3. Environment Variables Setup (`.env`)
+
+Create a `.env` file in the root directory and add the following credentials:
+
+```env
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 VITE_GEMINI_API_KEY=your_gemini_api_key
+```
 
-### 4. Run the Development Server
+---
+
+## 4. Run the Development Server
+
 ```bash
 npm run dev
+```
 
-The application will be available at http://localhost:5173.
+The application will be available at:
+
+```txt
+http://localhost:5173
+```
