@@ -11,23 +11,7 @@ import Transactions from './pages/Transactions';
 import Goals from './pages/Goals';
 import Profile from './pages/Profile';
 
-/**
- * AppShell – Rendered inside AuthProvider so it can read the auth state.
- *
- * Flow:
- *  1. Show SplashScreen for 2.5 s on first load.
- *  2. While Supabase hydrates the session → keep showing splash (authLoading).
- *  3. If no user → show <Login />.
- *  4. If user exists → show the full routed dashboard.
- *
- * Route map:
- *  /             → Home
- *  /transactions → Transactions
- *  /add          → AddTransaction
- *  /goals        → Goals
- *  /profile      → Profile
- *  *             → Redirect to /
- */
+
 const AppShell = () => {
   const { user, authLoading } = useAuth();
   const [splashDone, setSplashDone] = useState(false);
@@ -37,17 +21,14 @@ const AppShell = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Show splash while the initial timer is running OR while Supabase hydrates
   if (!splashDone || authLoading) {
     return <SplashScreen />;
   }
 
-  // Not authenticated → show login screen
   if (!user) {
     return <Login />;
   }
 
-  // Authenticated → show the full app
   return (
     <BrowserRouter>
       <Routes>
@@ -64,11 +45,6 @@ const AppShell = () => {
   );
 };
 
-/**
- * App – Root component. Wraps everything with AuthProvider so auth state
- * is available everywhere in the tree (including TransactionContext, which
- * lives in main.jsx).
- */
 const App = () => (
   <AuthProvider>
     <TransactionProvider>

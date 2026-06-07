@@ -6,7 +6,6 @@ import { getCategoryByLabel } from '../constants/categories';
 import { formatRupiah } from '../utils/currency';
 import { Eye, EyeOff } from 'lucide-react'
 
-// Sub-components
 const Header = ({ displayName }) => {
   const letter = (displayName?.[0] ?? '?').toUpperCase();
   return (
@@ -22,7 +21,6 @@ const Header = ({ displayName }) => {
   );
 };
 
-/** Green balance card */
 const BalanceCard = ({ balance, showBalance, onToggle }) => (
   <div className="mx-5 mt-3 rounded-2xl bg-emerald-600 p-5 shadow-lg shadow-emerald-900/40 relative overflow-hidden">
     {/* Decorative circles */}
@@ -60,7 +58,6 @@ const BalanceCard = ({ balance, showBalance, onToggle }) => (
   </div>
 );
 
-/** Income / Expense summary row */
 const SummaryRow = ({ totalIncome, totalExpense, showBalance }) => {
   const expPct = totalIncome > 0
     ? Math.min(100, Math.round((totalExpense / totalIncome) * 100))
@@ -86,7 +83,6 @@ const SummaryRow = ({ totalIncome, totalExpense, showBalance }) => {
         </p>
       </div>
 
-      {/* Expense card */}
       <div className="flex-1 rounded-2xl bg-slate-800/60 border border-slate-700/60 p-4">
         <div className="flex items-center justify-between mb-1">
           <span className="text-xs text-slate-400 font-medium">Expenses</span>
@@ -104,7 +100,6 @@ const SummaryRow = ({ totalIncome, totalExpense, showBalance }) => {
   );
 };
 
-/** Savings goal progress card – driven by live context data */
 const SavingsGoalCard = ({ goalState }) => {
   if (!goalState) {
     return (
@@ -163,7 +158,6 @@ const SavingsGoalCard = ({ goalState }) => {
   );
 };
 
-/** A single transaction row */
 const TransactionItem = ({ transaction, onDelete }) => {
   const meta = getCategoryByLabel(transaction.category);
   const Icon = meta.icon;
@@ -177,14 +171,12 @@ const TransactionItem = ({ transaction, onDelete }) => {
 
   return (
     <div className="flex items-center gap-3 px-4 py-3">
-      {/* Icon bubble */}
       <div
         className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${meta.color}`}
       >
         <Icon className="w-5 h-5" />
       </div>
 
-      {/* Title + category */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-slate-100 truncate">
           {transaction.note || transaction.category}
@@ -192,7 +184,6 @@ const TransactionItem = ({ transaction, onDelete }) => {
         <p className="text-xs text-slate-500 truncate">{transaction.category}</p>
       </div>
 
-      {/* Amount + date */}
       <div className="text-right shrink-0">
         <p className={`text-sm font-bold ${isIncome ? 'text-emerald-400' : 'text-red-400'}`}>
           {isIncome ? '+' : '-'}{formatRupiah(transaction.amount)}
@@ -206,7 +197,6 @@ const TransactionItem = ({ transaction, onDelete }) => {
         </p>
       </div>
 
-      {/* Delete button */}
       <button
         onClick={handleDelete}
         aria-label="Delete transaction"
@@ -220,7 +210,6 @@ const TransactionItem = ({ transaction, onDelete }) => {
   );
 };
 
-/** Empty state */
 const EmptyTransactions = () => (
   <div className="flex flex-col items-center justify-center py-10 text-center">
     <div className="w-14 h-14 rounded-full bg-slate-800 flex items-center justify-center mb-3">

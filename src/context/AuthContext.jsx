@@ -25,7 +25,6 @@ export const AuthProvider = ({ children }) => {
       setAuthLoading(false);
     });
 
-    // Listen for auth state changes (login, logout, token refresh…)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
